@@ -47,7 +47,7 @@ int SecureAPI::readlinkat(int dirfd, const char *pathname, char *buf, size_t buf
 }
 
 int SecureAPI::inotify_init(void) {
-    return (int) __syscall0(__NR_inotify_init);
+    return -1;
 }
 
 int SecureAPI::inotify_init1(int flags) {
