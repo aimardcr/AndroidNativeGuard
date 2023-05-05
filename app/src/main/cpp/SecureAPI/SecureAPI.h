@@ -28,6 +28,11 @@ namespace SecureAPI {
 
     int readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz);
 
+    int inotify_init(void);
+    int inotify_init1(int flags);
+    int inotify_add_watch(int fd, const char *pathname, uint32_t mask);
+    int inotify_rm_watch(int fd, int wd);
+
     int strcmp(const char *s1, const char *s2);
     int strncmp(const char *s1, const char *s2, size_t n);
     const char *strstr(const char *haystack, const char *needle);

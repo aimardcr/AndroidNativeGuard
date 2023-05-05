@@ -46,6 +46,22 @@ int SecureAPI::readlinkat(int dirfd, const char *pathname, char *buf, size_t buf
     return (int) __syscall4(__NR_readlinkat, dirfd, (long) pathname, (long) buf, bufsiz);
 }
 
+int SecureAPI::inotify_init(void) {
+    return (int) __syscall0(__NR_inotify_init);
+}
+
+int SecureAPI::inotify_init1(int flags) {
+    return (int) __syscall1(__NR_inotify_init1, flags);
+}
+
+int SecureAPI::inotify_add_watch(int fd, const char *pathname, uint32_t mask) {
+    return (int) __syscall3(__NR_inotify_add_watch, fd, (long) pathname, mask);
+}
+
+int SecureAPI::inotify_rm_watch(int fd, int wd) {
+    return (int) __syscall2(__NR_inotify_rm_watch, fd, wd);
+}
+
 int SecureAPI::strcmp(const char *s1, const char *s2) {
     while (*s1 && (*s1 == *s2)) {
         s1++;
