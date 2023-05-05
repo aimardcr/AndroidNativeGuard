@@ -19,5 +19,7 @@ Android Native Guard used various open-source projects to implement a true-secur
 
 # Credits:
 https://github.com/darvincisec/AntiDebugandMemoryDump
+
 https://github.com/darvincisec/DetectFrida
+
 https://github.com/aimardcr/NativeDetector
