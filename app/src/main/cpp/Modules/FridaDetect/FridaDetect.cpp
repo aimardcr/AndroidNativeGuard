@@ -48,7 +48,7 @@ bool FridaDetect::detectFridaPipe() {
     LOGI("FridaDetect::detectFridaPipe");
     int fd = SecureAPI::openat(AT_FDCWD, "/proc/self/fd", O_RDONLY | O_DIRECTORY, 0);
     if (fd == -1) {
-        return false;
+        return true;
     }
     LOGI("FridaDetect::detectFridaPipe fd: %d", fd);
 
