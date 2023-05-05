@@ -16,7 +16,7 @@ Android Native Guard used various open-source projects to implement a true-secur
 - App Tamper Detection (signature, checksum, etc)
 - Hook Scan Module (.text, .plt checksums)
 - Anti Memory Dump Module (inotify)
-- Magisk Module Bypass Detection (e.g.: Shamiko)
+- Magisk-Hide Detection Module (e.g.: Shamiko)
 
 # Credits:
 https://github.com/darvincisec/AntiDebugandMemoryDump
