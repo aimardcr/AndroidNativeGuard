@@ -3,6 +3,7 @@
 #include "Log.h"
 
 #include <sys/inotify.h>
+#include <sys/select.h>
 #include <fcntl.h>
 #include <dirent.h>
 
@@ -53,8 +54,9 @@ bool AntiDump::execute() {
     }
     SecureAPI::close(task);
 
-    size_t len = SecureAPI::read(fd, buf, sizeof(buf));
-    if (len) {
+    int len = (int) SecureAPI::read(fd, buf, sizeof(buf));
+    if (len > 0) {
+        LOGI("AntiDump::execute len: %d", len);
         struct inotify_event *event;
         for (char *ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
             event = (struct inotify_event *) ptr;
