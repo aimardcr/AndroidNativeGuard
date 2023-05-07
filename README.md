@@ -10,15 +10,15 @@ Android Native Guard used various open-source projects to implement a true-secur
 - Frida Detection
 - Riru & Zygisk Detection
 - Root Detection
+- Memory Access & Dump Detection
 
 # TODO
 - Better documentation (codes & README)
 - App Tamper Detection (signature, checksum, etc)
 - Hook Scan Module (.text, .plt checksums)
-- ~Anti Memory Dump Module (inotify)~
 - Magisk-Hide Detection Module (e.g.: Shamiko)
 
-# Credits:
+# Credits
 https://github.com/darvincisec/AntiDebugandMemoryDump
 
 https://github.com/darvincisec/DetectFrida
