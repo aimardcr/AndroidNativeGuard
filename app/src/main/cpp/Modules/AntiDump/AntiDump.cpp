@@ -12,7 +12,7 @@ const char *AntiDump::getName() {
 }
 
 eModuleSeverity AntiDump::getSeverity() {
-    return HIGH;
+    return MEDIUM;
 }
 
 bool AntiDump::execute() {
