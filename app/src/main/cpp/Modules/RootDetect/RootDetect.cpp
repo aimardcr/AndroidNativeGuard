@@ -72,8 +72,8 @@ bool RootDetect::detectMagiskMount() {
     }
 
     char buf[512];
-    for (const char *magiskMount : magiskMounts) {
-        while (readLine(fd, buf, sizeof(buf)) > 0) {
+    while (readLine(fd, buf, sizeof(buf)) > 0) {
+        for (const char *magiskMount : magiskMounts) {
             if (strstr(buf, magiskMount)) {
                 SecureAPI::close(fd);
                 return true;
