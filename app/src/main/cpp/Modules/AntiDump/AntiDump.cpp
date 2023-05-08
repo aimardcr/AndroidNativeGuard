@@ -42,12 +42,12 @@ bool AntiDump::execute() {
                 continue;
             }
             if (dirp->d_type == DT_DIR) {
-                char memPath[512], pagememPath[512];
+                char memPath[512], pagemapPath[512];
                 sprintf(memPath, "/proc/self/task/%s/mem", dirp->d_name);
-                sprintf(pagememPath, "/proc/self/task/%s/pagemap", dirp->d_name);
+                sprintf(pagemapPath, "/proc/self/task/%s/pagemap", dirp->d_name);
 
                 wd[n++] = SecureAPI::inotify_add_watch(fd, memPath, IN_ACCESS | IN_OPEN);
-                wd[n++] = SecureAPI::inotify_add_watch(fd, pagememPath, IN_ACCESS | IN_OPEN);
+                wd[n++] = SecureAPI::inotify_add_watch(fd, pagemapPath, IN_ACCESS | IN_OPEN);
             }
             bpos += dirp->d_reclen;
         }
