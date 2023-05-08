@@ -16,6 +16,7 @@
 #include "RiGisk/RiGisk.h"
 #include "RootDetect/RootDetect.h"
 #include "AntiDump/AntiDump.h"
+#include "AntiLibPatch/AntiLibPatch.h"
 
 JavaVM *g_VM;
 
@@ -51,6 +52,19 @@ void *anti_dump_thread(void *) {
     return 0;
 }
 
+void *anti_lib_patch_thread(void *) {
+    addLog("<span style='color: green;'>AntiLibPatch</span> service started.");
+
+    AntiLibPatch antiLibPatch;
+    while (1) {
+        if (antiLibPatch.execute()) {
+            addLog("<span style='color: green;'>AntiLibPatch</span>: <span style='color: red'>Library patching detected.</span>");
+        }
+        sleep(5);
+    }
+    return 0;
+}
+
 void *main_thread(void *) {
     addLog("<span style='color: yellow;'>Android Native Guard</span> service started.");
 
@@ -64,8 +78,10 @@ void *main_thread(void *) {
         addLog("<span style='color: green;'>RiGisk</span>: <span style='color: red'>Zygote injection detected.</span>");
     }
 
+
     pthread_t t;
     pthread_create(&t, NULL, anti_dump_thread, NULL);
+    pthread_create(&t, NULL, anti_lib_patch_thread, NULL);
 
     while (1) {
         static bool antiDebugDetected = false; // Do not use this example in production since it's only to prevent spamming the log.

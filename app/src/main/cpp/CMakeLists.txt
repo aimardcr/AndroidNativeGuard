@@ -17,7 +17,8 @@ add_library(NativeGuard SHARED
         Modules/FridaDetect/FridaDetect.cpp
         Modules/RiGisk/RiGisk.cpp
         Modules/RootDetect/RootDetect.cpp
-        Modules/AntiDump/AntiDump.cpp)
+        Modules/AntiDump/AntiDump.cpp
+        Modules/AntiLibPatch/AntiLibPatch.cpp)
 
 target_include_directories(NativeGuard PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/SecureAPI
