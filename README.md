@@ -19,7 +19,7 @@ Android Native Guard used various open-source projects to implement a true-secur
 - Magisk-Hide Detection Module (e.g.: Shamiko)
 
 # Notes
-- Don't forget to add `android:extractNativeLibs="true"` to your `AndroidManifest.xml` so that module AntiLibPatch can work properly.
+- Don't forget to add `android:extractNativeLibs="true"` to your `AndroidManifest.xml` so that module _AntiLibPatch_ can work properly.
 
 # Credits
 https://github.com/darvincisec/AntiDebugandMemoryDump
