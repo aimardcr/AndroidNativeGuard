@@ -4,6 +4,8 @@
 #include <unistd.h>
 
 #include <string>
+#include <vector>
+#include <map>
 
 enum eModuleSeverity {
     HIGH, // Dangerous and might harm the application's integrity
