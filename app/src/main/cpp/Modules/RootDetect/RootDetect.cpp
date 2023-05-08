@@ -32,7 +32,7 @@ const char *RootDetect::getName() {
 }
 
 eModuleSeverity RootDetect::getSeverity() {
-    return HIGH;
+    return LOW;
 }
 
 bool RootDetect::execute() {
@@ -49,7 +49,6 @@ bool RootDetect::execute() {
 
 bool RootDetect::detectSuBinaries() {
     for (const char *suBinary : suBinaries) {
-        LOGI("RootDetect::execute suBinary: %s", suBinary);
         int fd = SecureAPI::openat(AT_FDCWD, suBinary, O_RDONLY, 0);
         if (fd != -1) {
             LOGI("RootDetect::execute su binary detected: %s", suBinary);
@@ -57,7 +56,7 @@ bool RootDetect::detectSuBinaries() {
             return true;
         }
 
-        if (SecureAPI::access(suBinary, F_OK) != -1 || errno != ENOENT) {
+        if (SecureAPI::access(suBinary, F_OK) != -1 || errno != ENOENT) { // In some case, errno will says access denied when non-root user tries to access it.
             LOGI("RootDetect::execute su binary detected: %s", suBinary);
             return true;
         }
@@ -72,7 +71,7 @@ bool RootDetect::detectMagiskMount() {
     }
 
     char buf[512];
-    while (readLine(fd, buf, sizeof(buf)) > 0) {
+    while (SecureAPI::read(fd, buf, sizeof(buf)) > 0) {
         for (const char *magiskMount : magiskMounts) {
             if (strstr(buf, magiskMount)) {
                 SecureAPI::close(fd);
@@ -83,24 +82,4 @@ bool RootDetect::detectMagiskMount() {
 
     SecureAPI::close(fd);
     return false;
-}
-
-size_t RootDetect::readLine(int fd, char *buf, size_t bufSize) {
-    size_t i = 0, n;
-    char c;
-    while (i < bufSize - 1) {
-        n = SecureAPI::read(fd, &c, 1);
-        if (n == -1) {
-            return -1;
-        }
-
-        if (n == 0 || c == '\n') {
-            break;
-        }
-
-        buf[i++] = c;
-    }
-    buf[i] = '\0';
-
-    return i;
 }
