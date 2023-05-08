@@ -31,7 +31,7 @@ void addLog(std::string log) {
     char date[20];
     sprintf(date, "%02d:%02d:%02d", ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
 
-    log = "[" + std::string(date) + "]: " + log;
+    log = "[" + std::string(date) + "] " + log;
 
     env->CallStaticVoidMethod(mainActivityClass, addLogMethod, env->NewStringUTF(log.c_str()));
 
@@ -39,7 +39,7 @@ void addLog(std::string log) {
 }
 
 void *anti_dump_thread(void *) {
-    addLog("Module <span style='color: green;'>AntiDump</span> started.");
+    addLog("<span style='color: green;'>AntiDump</span> service started.");
 
     AntiDump antiDump;
     while (1) {
@@ -52,10 +52,7 @@ void *anti_dump_thread(void *) {
 }
 
 void *main_thread(void *) {
-    addLog("<span style='color: yellow;'>Android Native Guard</span> started.");
-
-    pthread_t t;
-    pthread_create(&t, NULL, anti_dump_thread, NULL);
+    addLog("<span style='color: yellow;'>Android Native Guard</span> service started.");
 
     RootDetect rootDetect;
     if (rootDetect.execute()) {
@@ -67,8 +64,11 @@ void *main_thread(void *) {
         addLog("<span style='color: green;'>RiGisk</span>: <span style='color: red'>Zygote injection detected.</span>");
     }
 
+    pthread_t t;
+    pthread_create(&t, NULL, anti_dump_thread, NULL);
+
     while (1) {
-        static bool antiDebugDetected = false;
+        static bool antiDebugDetected = false; // Do not use this example in production since it's only to prevent spamming the log.
         if (!antiDebugDetected) {
             AntiDebug antiDebug;
             if (antiDebug.execute()) {
@@ -77,7 +77,7 @@ void *main_thread(void *) {
             }
         }
 
-        static bool fridaDetected = false;
+        static bool fridaDetected = false; // Do not use this example in production since it's only to prevent spamming the log.
         if (!fridaDetected) {
             FridaDetect fridaDetect;
             if (fridaDetect.execute()) {
