@@ -1,8 +1,18 @@
 cmake_minimum_required(VERSION 3.22.1)
 
+project(NativeGuard)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-register")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-rtti -fno-exceptions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdata-sections -ffunction-sections")
 
 if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -marm")
@@ -10,7 +20,6 @@ endif ()
 
 add_library(NativeGuard SHARED
         main.cpp
-        SecureAPI/SecureAPI.cpp
         Utils/ElfImg.cpp
         Utils/Utils.cpp
         Modules/AntiDebug/AntiDebug.cpp
@@ -27,8 +36,3 @@ target_include_directories(NativeGuard PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Modules)
 
 target_link_libraries(NativeGuard log)
-
-#add_custom_command( TARGET NativeGuard
-#        POST_BUILD
-#        COMMAND "${ANDROID_TOOLCHAIN_PREFIX}strip" -R .comment -g -S -d --strip-unneeded ${CMAKE_HOME_DIRECTORY}/../../../build/intermediates/cmake/${CMAKE_BUILD_TYPE}/obj/${ANDROID_ABI}/libNativeGuard.so
-#        COMMENT "Stripped native library")
