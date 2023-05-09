@@ -117,7 +117,7 @@ bool AntiLibPatch::execute() {
 
             if (shdr.sh_type == SHT_PROGBITS) {
                 if ((shdr.sh_flags & (SHF_EXECINSTR | SHF_ALLOC)) == (SHF_EXECINSTR | SHF_ALLOC)) {
-                    if (!strcmp(name, ".plt")) {
+                    if (!SecureAPI::strcmp(name, ".plt")) {
                         continue;
                     }
 
