@@ -50,7 +50,7 @@ namespace SecureAPI {
 #ifdef __arm__
         return (int) __syscall2(__NR_access, (long) pathname, mode);
 #else
-        return ::access(pathname, mode); // TODO: Find better solution
+        return (int) __syscall3(__NR_faccessat, AT_FDCWD, (long) pathname, mode);
 #endif
     }
 
@@ -60,10 +60,6 @@ namespace SecureAPI {
 
     __attribute__((always_inline)) inline int readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
         return (int) __syscall4(__NR_readlinkat, dirfd, (long) pathname, (long) buf, bufsiz);
-    }
-
-    __attribute__((always_inline)) inline int inotify_init(void) {
-        return -1;
     }
 
     __attribute__((always_inline)) inline int inotify_init1(int flags) {
