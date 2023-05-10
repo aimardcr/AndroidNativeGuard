@@ -1,7 +1,6 @@
 #include "AntiLibPatch.h"
 #include "SecureAPI.h"
 #include "Log.h"
-#include "Utils.h"
 
 #include <vector>
 #include <map>
@@ -21,6 +20,17 @@
 #define Elf_Shdr Elf32_Shdr
 #define Elf_Sym  Elf32_Sym
 #endif
+
+__attribute__((always_inline)) static inline uint32_t crc32(uint8_t *data, size_t size) {
+    uint32_t crc = 0xFFFFFFFF;
+    for (size_t i = 0; i < size; i++) {
+        crc ^= data[i];
+        for (size_t j = 0; j < 8; j++) {
+            crc = (crc >> 1) ^ (0xEDB88320 & (-(crc & 1)));
+        }
+    }
+    return ~crc;
+}
 
 AntiLibPatch::AntiLibPatch() {
     LOGI("AntiLibPatch::AntiLibPatch");
@@ -75,7 +85,7 @@ const char *AntiLibPatch::getName() {
     return "Lib. Patch & Hook Detection";
 }
 
-eModuleSeverity AntiLibPatch::getSeverity() {
+eSeverity AntiLibPatch::getSeverity() {
     return HIGH;
 }
 

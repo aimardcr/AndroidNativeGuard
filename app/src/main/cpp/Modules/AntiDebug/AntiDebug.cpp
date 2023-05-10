@@ -9,7 +9,7 @@ const char *AntiDebug::getName() {
     return "Debugger Detection";
 }
 
-eModuleSeverity AntiDebug::getSeverity() {
+eSeverity AntiDebug::getSeverity() {
     return HIGH;
 }
 

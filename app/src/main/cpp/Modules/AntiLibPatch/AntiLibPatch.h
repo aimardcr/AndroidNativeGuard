@@ -6,7 +6,7 @@ private:
 public:
     AntiLibPatch();
     const char *getName() override;
-    eModuleSeverity getSeverity() override;
+    eSeverity getSeverity() override;
 
     bool execute() override;
 };

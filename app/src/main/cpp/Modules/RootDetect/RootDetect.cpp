@@ -31,7 +31,7 @@ const char *RootDetect::getName() {
     return "Root Detection";
 }
 
-eModuleSeverity RootDetect::getSeverity() {
+eSeverity RootDetect::getSeverity() {
     return LOW;
 }
 

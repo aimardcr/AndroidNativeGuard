@@ -2,7 +2,6 @@
 #include "SecureAPI.h"
 #include "Log.h"
 
-#include "Utils.h"
 #include "ElfImg.h"
 
 #include <vector>
@@ -49,7 +48,7 @@ const char *RiGisk::getName() {
     return "Riru & Zygisk Detection";
 }
 
-eModuleSeverity RiGisk::getSeverity() {
+eSeverity RiGisk::getSeverity() {
     return MEDIUM;
 }
 

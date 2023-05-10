@@ -3,7 +3,7 @@
 class RootDetect : public IModule {
 public:
     const char *getName() override;
-    eModuleSeverity getSeverity() override;
+    eSeverity getSeverity() override;
 
     bool execute() override;
 private:

@@ -12,7 +12,7 @@ const char *FridaDetect::getName() {
     return "Frida Detection";
 }
 
-eModuleSeverity FridaDetect::getSeverity() {
+eSeverity FridaDetect::getSeverity() {
     return HIGH;
 }
 
@@ -90,24 +90,4 @@ bool FridaDetect::detectFridaPipe() {
 
     SecureAPI::close(fd);
     return false;
-}
-
-size_t FridaDetect::readLine(int fd, char *buf, size_t bufSize) {
-    size_t i = 0, n;
-    char c;
-    while (i < bufSize - 1) {
-        n = SecureAPI::read(fd, &c, 1);
-        if (n == -1) {
-            return -1;
-        }
-
-        if (n == 0 || c == '\n') {
-            break;
-        }
-
-        buf[i++] = c;
-    }
-    buf[i] = '\0';
-
-    return i;
 }

@@ -11,7 +11,7 @@ const char *AntiDump::getName() {
     return "Memory Dump Detection";
 }
 
-eModuleSeverity AntiDump::getSeverity() {
+eSeverity AntiDump::getSeverity() {
     return MEDIUM;
 }
 
@@ -19,6 +19,9 @@ bool AntiDump::execute() {
     int fd = SecureAPI::inotify_init1(0);
     if (fd < 0) {
         LOGI("AntiDump::execute inotify_init1 failed");
+        if (errno == EMFILE || errno == ENFILE) {
+            LOGI("AntiDump::execute inotify_init1 probably failed because of max_user_watches being tampered.");
+        }
         return true;
     }
 
