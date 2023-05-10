@@ -1,5 +1,5 @@
-# AndroidNativeGuard
-All-in-one android application protection
+# What is it?
+Android Native Guard is a proof of concepts on how to detect various threat that might harm your application's integrity.
 
 # How secure is it?
 Android Native Guard used what's called `Secure API` and low-level function call through inline `syscall` to prevent any bypass that could potentially break the security system.
