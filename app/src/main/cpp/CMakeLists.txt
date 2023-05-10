@@ -21,7 +21,6 @@ endif ()
 add_library(NativeGuard SHARED
         main.cpp
         Utils/ElfImg.cpp
-        Utils/Utils.cpp
         Modules/AntiDebug/AntiDebug.cpp
         Modules/FridaDetect/FridaDetect.cpp
         Modules/RiGisk/RiGisk.cpp
