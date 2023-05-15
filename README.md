@@ -16,8 +16,8 @@ Android Native Guard used various open-source projects to implement a true-secur
 # TODO
 - Better documentation (codes & README)
 - App Tamper Detection (signature, checksum, etc)
-- Magisk-Hide Detection Module (e.g.: Shamiko)
-- Blacklist lib. for AntiLibPatch module
+- Magisk-Hide Detection Module (e.g. Shamiko)
+- Blacklist for AntiLibPatch module
 
 # Notes
 - Don't forget to add `android:extractNativeLibs="true"` to your `AndroidManifest.xml` so that module _AntiLibPatch_ can work properly.
