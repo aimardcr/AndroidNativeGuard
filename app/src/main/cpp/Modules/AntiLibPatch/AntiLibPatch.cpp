@@ -21,6 +21,10 @@
 #define Elf_Sym  Elf32_Sym
 #endif
 
+static std::vector<std::string> BLACKLISTS {
+    // Add your library here incase you don't want a certain library to be detected when it's tampered
+};
+
 __attribute__((always_inline)) static inline uint32_t crc32(uint8_t *data, size_t size) {
     uint32_t crc = 0xFFFFFFFF;
     for (size_t i = 0; i < size; i++) {
@@ -37,6 +41,10 @@ AntiLibPatch::AntiLibPatch(void (*callback)(const char *name, const char *sectio
 
     dl_iterate_phdr([](struct dl_phdr_info *info, size_t size, void *data) -> int {
         if (!strstr(info->dlpi_name, ".so")) {
+            return 0;
+        }
+
+        if (std::find(BLACKLISTS.begin(), BLACKLISTS.end(), info->dlpi_name) != BLACKLISTS.end()) {
             return 0;
         }
 
