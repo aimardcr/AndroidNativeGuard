@@ -7,6 +7,10 @@
 #include <fcntl.h>
 #include <dirent.h>
 
+AntiDump::AntiDump(void (*callback)()) : onDumpDetected(callback) {
+
+}
+
 const char *AntiDump::getName() {
     return "Memory Dump Detection";
 }
@@ -66,6 +70,14 @@ bool AntiDump::execute() {
             if (event->mask & IN_ACCESS || event->mask & IN_OPEN) {
                 LOGI("AntiDump::execute event->mask: %d", event->mask);
                 SecureAPI::close(fd);
+
+                if (this->onDumpDetected) {
+                    time_t now = time(0);
+                    if (std::find(this->m_dump_times.begin(), this->m_dump_times.end(), now) == this->m_dump_times.end()) {
+                        this->m_dump_times.push_back(now);
+                        this->onDumpDetected();
+                    }
+                }
                 return true;
             }
         }

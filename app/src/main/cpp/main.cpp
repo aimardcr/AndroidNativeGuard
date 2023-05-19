@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <time.h>
+#include <thread>
 
 #include <jni.h>
 
@@ -39,31 +40,28 @@ void addLog(std::string log) {
     g_VM->DetachCurrentThread();
 }
 
-void *anti_dump_thread(void *) {
-    addLog("<span style='color: green;'>AntiDump</span> service started.");
-
-    AntiDump antiDump;
-    while (1) {
-        if (antiDump.execute()) {
-            addLog("<span style='color: green;'>AntiDump</span>: <span style='color: red'>An attempt to access/dump memory detected.</span>");
-        }
-        sleep(1);
-    }
-    return 0;
+// ==================== Callbacks ==================== //
+void onDebuggerDetected() {
+    addLog("<span style='color: green;'>AntiDebug</span>: <span style='color: red'>Debugger detected.</span>");
 }
 
-void *anti_lib_patch_thread(void *) {
-    addLog("<span style='color: green;'>AntiLibPatch</span> service started.");
-
-    AntiLibPatch antiLibPatch;
-    while (1) {
-        if (antiLibPatch.execute()) {
-            addLog("<span style='color: green;'>AntiLibPatch</span>: <span style='color: red'>Library patching detected.</span>");
-        }
-        sleep(5);
-    }
-    return 0;
+void onFridaDetected() {
+    addLog("<span style='color: green;'>FridaDetect</span>: <span style='color: red'>Frida detected.</span>");
 }
+
+void onDumpDetected() {
+    addLog("<span style='color: green;'>AntiDump</span>: <span style='color: red'>An attempt to access/dump memory detected.</span>");
+}
+
+void onLibTampered(const char *name, const char *section, uint32_t old_checksum, uint32_t new_checksum) {
+    char log[1024];
+    sprintf(log, "<span style='color: green;'>AntiLibPatch</span>: <span style='color: red'>%s</span> %s has been tampered, 0x%08X -> 0x%08X", name, section, old_checksum, new_checksum);
+    addLog(log);
+}
+
+// ==================== Main ==================== //
+std::vector<IModule *>  services;
+std::vector<std::thread> threads;
 
 void *main_thread(void *) {
     addLog("<span style='color: yellow;'>Android Native Guard</span> service started.");
@@ -78,30 +76,22 @@ void *main_thread(void *) {
         addLog("<span style='color: green;'>RiGisk</span>: <span style='color: red'>Zygote injection detected.</span>");
     }
 
+    services.push_back(new AntiDebug(onDebuggerDetected));
+    services.push_back(new FridaDetect(onFridaDetected));
+    services.push_back(new AntiDump(onDumpDetected));
+    services.push_back(new AntiLibPatch(onLibTampered));
 
-    pthread_t t;
-    pthread_create(&t, NULL, anti_dump_thread, NULL);
-    pthread_create(&t, NULL, anti_lib_patch_thread, NULL);
-
-    while (1) {
-        static bool antiDebugDetected = false; // Do not use this example in production since it's only to prevent spamming the log.
-        if (!antiDebugDetected) {
-            AntiDebug antiDebug;
-            if (antiDebug.execute()) {
-                addLog("<span style='color: green;'>AntiDebug</span>: <span style='color: red'>Anti-debugging detected.</span>");
-                antiDebugDetected = true;
+    for (auto &service : services) {
+        threads.emplace_back([&]() {
+            while (true) {
+                service->execute();
+                sleep(1);
             }
-        }
+        });
+    }
 
-        static bool fridaDetected = false; // Do not use this example in production since it's only to prevent spamming the log.
-        if (!fridaDetected) {
-            FridaDetect fridaDetect;
-            if (fridaDetect.execute()) {
-                addLog("<span style='color: green;'>FridaDetect</span>: <span style='color: red'>Frida detected.</span>");
-                fridaDetected = true;
-            }
-        }
-        sleep(1);
+    for (auto &thread : threads) {
+        thread.detach();
     }
     return 0;
 }

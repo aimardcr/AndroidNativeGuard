@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 enum eSeverity {
     HIGH, // Dangerous and might harm the application's integrity

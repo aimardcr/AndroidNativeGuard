@@ -32,7 +32,7 @@ __attribute__((always_inline)) static inline uint32_t crc32(uint8_t *data, size_
     return ~crc;
 }
 
-AntiLibPatch::AntiLibPatch() {
+AntiLibPatch::AntiLibPatch(void (*callback)(const char *name, const char *section, uint32_t old_checksum, uint32_t new_checksum)) : onLibTampered(callback) {
     LOGI("AntiLibPatch::AntiLibPatch");
 
     dl_iterate_phdr([](struct dl_phdr_info *info, size_t size, void *data) -> int {
@@ -135,6 +135,12 @@ bool AntiLibPatch::execute() {
                     LOGI("AntiLibPatch::execute %s[%s] checksum: 0x%08X -> 0x%08X", info.dlpi_name, name, this->m_checksums[info.dlpi_name][name], checksum);
                     if (this->m_checksums[info.dlpi_name][name] != checksum) {
                         LOGI("AntiLibPatch::execute %s[%s] checksum mismatch", info.dlpi_name, name);
+                        if (this->onLibTampered) {
+                            if (this->m_last_checksums.find(info.dlpi_name) == this->m_last_checksums.end() || this->m_last_checksums[info.dlpi_name][name] != checksum) {
+                                this->m_last_checksums[info.dlpi_name][name] = checksum;
+                                this->onLibTampered(info.dlpi_name, name, this->m_checksums[info.dlpi_name][name], checksum);
+                            }
+                        }
                         return true;
                     }
                 }

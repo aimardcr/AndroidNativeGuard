@@ -8,6 +8,10 @@
 #include <link.h>
 #include <dlfcn.h>
 
+FridaDetect::FridaDetect(void (*callback)()) : onFridaDetected(callback) {
+
+}
+
 const char *FridaDetect::getName() {
     return "Frida Detection";
 }
@@ -19,10 +23,14 @@ eSeverity FridaDetect::getSeverity() {
 bool FridaDetect::execute() {
     LOGI("FridaDetect::execute");
 
-    if (detectFridaAgent()) {
-        return true;
-    }
-    if (detectFridaPipe()) {
+    if (detectFridaAgent() || detectFridaPipe()) {
+        if (this->onFridaDetected) {
+            time_t now = time(0);
+            if (std::find(this->m_frida_times.begin(), this->m_frida_times.end(), now) == this->m_frida_times.end()) {
+                this->m_frida_times.push_back(now);
+                this->onFridaDetected();
+            }
+        }
         return true;
     }
     return false;

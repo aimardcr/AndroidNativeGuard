@@ -5,7 +5,11 @@
 #include <fcntl.h>
 #include <dirent.h>
 
-const char *AntiDebug::getName() {
+AntiDebug::AntiDebug(void (*callback)()) : onDebuggerDetected(callback) {
+
+}
+
+const char *AntiDebug::getName()  {
     return "Debugger Detection";
 }
 
@@ -95,6 +99,13 @@ bool AntiDebug::checkTracerPid(int fd) {
             int pid = atoi(buf + 10);
             LOGI("AntiDebug::checkTracerPid(%d) pid: %d", fd, pid);
             if (pid != 0) {
+                if (this->onDebuggerDetected) {
+                    time_t now = time(0);
+                    if (std::find(this->m_debug_times.begin(), this->m_debug_times.end(), now) == this->m_debug_times.end()) {
+                        this->m_debug_times.push_back(now);
+                        this->onDebuggerDetected();
+                    }
+                }
                 return true;
             }
         }
