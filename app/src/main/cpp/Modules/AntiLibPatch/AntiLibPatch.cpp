@@ -21,7 +21,7 @@
 #define Elf_Sym  Elf32_Sym
 #endif
 
-static std::vector<std::string> BLACKLISTS {
+static std::vector<std::string> blacklists {
     // Add your library here incase you don't want a certain library to be detected when it's tampered
 };
 
@@ -50,10 +50,6 @@ AntiLibPatch::AntiLibPatch(void (*callback)(const char *name, const char *sectio
 
     dl_iterate_phdr([](struct dl_phdr_info *info, size_t size, void *data) -> int {
         if (!strstr(info->dlpi_name, ".so")) {
-            return 0;
-        }
-
-        if (std::find(BLACKLISTS.begin(), BLACKLISTS.end(), get_filename(info->dlpi_name)) != BLACKLISTS.end()) {
             return 0;
         }
 
@@ -116,7 +112,7 @@ bool AntiLibPatch::execute() {
     }, &infos);
 
     for (auto info : infos) {
-        if (!strstr(info.dlpi_name, ".so") || this->m_checksums.count(info.dlpi_name) == 0) {
+        if (!strstr(info.dlpi_name, ".so") || this->m_checksums.count(info.dlpi_name) == 0 || std::find(blacklists.begin(), blacklists.end(), get_filename(info.dlpi_name)) != blacklists.end()) {
             continue;
         }
 
