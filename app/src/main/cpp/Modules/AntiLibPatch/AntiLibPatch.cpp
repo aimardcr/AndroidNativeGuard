@@ -36,6 +36,15 @@ __attribute__((always_inline)) static inline uint32_t crc32(uint8_t *data, size_
     return ~crc;
 }
 
+__attribute__((always_inline)) static inline const char *get_filename(const char *path) {
+    for (const char *s = path; *s; s++) {
+        if (*s == '/') {
+            path = s + 1;
+        }
+    }
+    return path;
+}
+
 AntiLibPatch::AntiLibPatch(void (*callback)(const char *name, const char *section, uint32_t old_checksum, uint32_t new_checksum)) : onLibTampered(callback) {
     LOGI("AntiLibPatch::AntiLibPatch");
 
@@ -44,7 +53,7 @@ AntiLibPatch::AntiLibPatch(void (*callback)(const char *name, const char *sectio
             return 0;
         }
 
-        if (std::find(BLACKLISTS.begin(), BLACKLISTS.end(), info->dlpi_name) != BLACKLISTS.end()) {
+        if (std::find(BLACKLISTS.begin(), BLACKLISTS.end(), get_filename(info->dlpi_name)) != BLACKLISTS.end()) {
             return 0;
         }
 
