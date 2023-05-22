@@ -60,7 +60,7 @@ void onLibTampered(const char *name, const char *section, uint32_t old_checksum,
 }
 
 // ==================== Main ==================== //
-std::vector<IModule *>  services;
+std::vector<IModule *> services;
 std::vector<std::thread> threads;
 
 void *main_thread(void *) {
