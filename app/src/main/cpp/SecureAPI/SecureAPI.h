@@ -97,21 +97,6 @@ namespace SecureAPI {
         return 0;
     }
 
-    __attribute__((always_inline)) inline const char *strstr(const char *haystack, const char *needle) {
-        size_t needle_len = strlen(needle);
-        if (!needle_len) {
-            return haystack;
-        }
-        const char *p = haystack;
-        while ((p = strchr(p, *needle)) != NULL) {
-            if (!memcmp(p, needle, needle_len)) {
-                return p;
-            }
-            p++;
-        }
-        return NULL;
-    }
-
     __attribute__((always_inline)) inline char *strchr(const char *s, int c) {
         while (*s != (char) c) {
             if (!*s++) {
@@ -156,4 +141,20 @@ namespace SecureAPI {
         }
         return s;
     }
+
+    __attribute__((always_inline)) inline const char *strstr(const char *haystack, const char *needle) {
+        size_t needle_len = SecureAPI::strlen(needle);
+        if (!needle_len) {
+            return haystack;
+        }
+        const char *p = haystack;
+        while ((p = SecureAPI::strchr(p, *needle)) != NULL) {
+            if (!SecureAPI::memcmp(p, needle, needle_len)) {
+                return p;
+            }
+            p++;
+        }
+        return NULL;
+    }
+
 }
