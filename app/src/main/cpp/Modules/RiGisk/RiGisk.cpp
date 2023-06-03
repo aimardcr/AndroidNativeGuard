@@ -79,12 +79,14 @@ bool RiGisk::execute() {
     if (somain) {
         for (auto *iter = somain; iter; iter = iter->next()) {
             LOGI("RiGisk::execute somain so: %p, realpath: %s, soname: %s", iter, iter->get_realpath(), iter->get_soname());
-            if (SecureAPI::strstr(iter->get_realpath(), "riru")) {
-                LOGI("RiGisk::execute riru detected");
-                return true;
-            } else if (SecureAPI::strstr(iter->get_soname(), "riru")) {
-                LOGI("RiGisk::execute riru detected");
-                return true;
+            if (iter->get_realpath() && iter->get_soname()) {
+                if (SecureAPI::strstr(iter->get_realpath(), "riru")) {
+                    LOGI("RiGisk::execute riru detected");
+                    return true;
+                } else if (SecureAPI::strstr(iter->get_soname(), "riru")) {
+                    LOGI("RiGisk::execute riru detected");
+                    return true;
+                }
             }
         }
     }
@@ -92,12 +94,14 @@ bool RiGisk::execute() {
     if (solist) {
         for (auto *iter = solist; iter; iter = iter->next()) {
             LOGI("RiGisk::execute solist so: %p, realpath: %s, soname: %s", iter, iter->get_realpath(), iter->get_soname());
-            if (SecureAPI::strstr(iter->get_realpath(), "riru")) {
-                LOGI("RiGisk::execute riru detected");
-                return true;
-            } else if (SecureAPI::strstr(iter->get_soname(), "riru")) {
-                LOGI("RiGisk::execute riru detected");
-                return true;
+            if (iter->get_realpath() && iter->get_soname()) {
+                if (SecureAPI::strstr(iter->get_realpath(), "riru")) {
+                    LOGI("RiGisk::execute riru detected");
+                    return true;
+                } else if (SecureAPI::strstr(iter->get_soname(), "riru")) {
+                    LOGI("RiGisk::execute riru detected");
+                    return true;
+                }
             }
         }
     }
@@ -105,12 +109,14 @@ bool RiGisk::execute() {
     if (preloads) {
         for (auto so: *preloads) {
             LOGI("RiGisk::execute preloads so: %p, realpath: %s, soname: %s", so, so->get_realpath(), so->get_soname());
-            if (SecureAPI::strstr(so->get_realpath(), "zygisk")) {
-                LOGI("RiGisk::execute zygisk detected");
-                return true;
-            } else if (SecureAPI::strstr(so->get_soname(), "zygisk")) {
-                LOGI("RiGisk::execute zygisk detected");
-                return true;
+            if (so->get_realpath() && so->get_soname()) {
+                if (SecureAPI::strstr(so->get_realpath(), "zygisk")) {
+                    LOGI("RiGisk::execute zygisk detected");
+                    return true;
+                } else if (SecureAPI::strstr(so->get_soname(), "zygisk")) {
+                    LOGI("RiGisk::execute zygisk detected");
+                    return true;
+                }
             }
         }
     }
