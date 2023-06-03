@@ -63,7 +63,7 @@ void onLibTampered(const char *name, const char *section, uint32_t old_checksum,
 std::vector<IModule *> services;
 std::vector<std::thread> threads;
 
-void *main_thread(void *) {
+void AndroidNativeGuard() {
     addLog("<span style='color: yellow;'>Android Native Guard</span> service started.");
 
     RootDetect rootDetect;
@@ -93,7 +93,6 @@ void *main_thread(void *) {
     for (auto &thread : threads) {
         thread.detach();
     }
-    return 0;
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -106,7 +105,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     addLogMethod = env->GetStaticMethodID(clazz, "addLog", "(Ljava/lang/String;)V");
     mainActivityClass = (jclass)env->NewGlobalRef(clazz);
 
-    pthread_t t;
-    pthread_create(&t, NULL, main_thread, NULL);
+    AndroidNativeGuard();
     return JNI_VERSION_1_6;
 }
