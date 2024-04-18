@@ -8,6 +8,9 @@
 #include <link.h>
 #include <dlfcn.h>
 
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
 FridaDetect::FridaDetect(void (*callback)()) : onFridaDetected(callback) {
 
 }
@@ -23,7 +26,7 @@ eSeverity FridaDetect::getSeverity() {
 bool FridaDetect::execute() {
     LOGI("FridaDetect::execute");
 
-    if (detectFridaAgent() || detectFridaPipe()) {
+    if (detectFridaAgent() || detectFridaPipe() || detectFridaListener()) {
         if (this->onFridaDetected) {
             time_t now = time(0);
             if (std::find(this->m_frida_times.begin(), this->m_frida_times.end(), now) == this->m_frida_times.end()) {
@@ -94,6 +97,29 @@ bool FridaDetect::detectFridaPipe() {
 
             bpos += dirp->d_reclen;
         }
+    }
+
+    SecureAPI::close(fd);
+    return false;
+}
+
+bool FridaDetect::detectFridaListener() {
+    LOGI("FridaDetect::detectFridaListener");
+    int fd = SecureAPI::socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) {
+        return true;
+    }
+    LOGI("FridaDetect::detectFridaListener fd: %d", fd);
+
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(27042);
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+    if (SecureAPI::connect(fd, (const struct sockaddr *) &addr, sizeof(addr)) == 0) {
+        LOGI("FridaDetect::detectFridaListener port %d is open", ntohs(addr.sin_port));
+        SecureAPI::close(fd);
+        return true;
     }
 
     SecureAPI::close(fd);

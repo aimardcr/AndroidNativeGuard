@@ -7,6 +7,10 @@
 
 #include <asm/unistd.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/inotify.h>
+
 #ifdef __arm__
 #include "syscall/armeabi-v7a/syscall_arch.h"
 #elif defined(__aarch64__)
@@ -72,6 +76,14 @@ namespace SecureAPI {
 
     __attribute__((always_inline)) inline int inotify_rm_watch(int fd, int wd) {
         return (int) __syscall2(__NR_inotify_rm_watch, fd, wd);
+    }
+
+    __attribute__((always_inline)) inline int socket(int domain, int type, int protocol) {
+        return (int) __syscall3(__NR_socket, domain, type, protocol);
+    }
+
+    __attribute__((always_inline)) inline int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+        return (int) __syscall3(__NR_connect, sockfd, (long) addr, addrlen);
     }
 
     __attribute__((always_inline)) inline int strcmp(const char *s1, const char *s2) {
@@ -156,5 +168,4 @@ namespace SecureAPI {
         }
         return NULL;
     }
-
 }

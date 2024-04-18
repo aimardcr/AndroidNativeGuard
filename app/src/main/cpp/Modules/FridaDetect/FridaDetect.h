@@ -10,6 +10,7 @@ public:
 private:
     bool detectFridaAgent();
     bool detectFridaPipe();
+    bool detectFridaListener();
 
     std::vector<time_t> m_frida_times;
     void (*onFridaDetected)();

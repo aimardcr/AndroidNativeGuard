@@ -50,7 +50,7 @@ bool RootDetect::execute() {
 bool RootDetect::detectSuBinaries() {
     for (const char *suBinary : suBinaries) {
         int fd = SecureAPI::openat(AT_FDCWD, suBinary, O_RDONLY, 0);
-        if (fd != -1) {
+        if (fd < 0) {
             LOGI("RootDetect::execute su binary detected: %s", suBinary);
             SecureAPI::close(fd);
             return true;
