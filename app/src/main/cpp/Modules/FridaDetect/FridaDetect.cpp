@@ -105,7 +105,7 @@ bool FridaDetect::detectFridaPipe() {
 
 bool FridaDetect::detectFridaListener() {
     LOGI("FridaDetect::detectFridaListener");
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    int fd = SecureAPI::socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
         LOGI("FridaDetect::detectFridaListener socket failed, errno: %d", errno);
         return true;
