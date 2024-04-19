@@ -105,21 +105,32 @@ bool FridaDetect::detectFridaPipe() {
 
 bool FridaDetect::detectFridaListener() {
     LOGI("FridaDetect::detectFridaListener");
-    int fd = SecureAPI::socket(AF_INET, SOCK_STREAM, 0);
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
+        LOGI("FridaDetect::detectFridaListener socket failed, errno: %d", errno);
         return true;
     }
-    LOGI("FridaDetect::detectFridaListener fd: %d", fd);
 
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(27042);
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-    if (SecureAPI::connect(fd, (const struct sockaddr *) &addr, sizeof(addr)) == 0) {
-        LOGI("FridaDetect::detectFridaListener port %d is open", ntohs(addr.sin_port));
-        SecureAPI::close(fd);
-        return true;
+    for (int i = 1; i < 65535; i++) {
+        addr.sin_port = htons(i);
+        if (SecureAPI::connect(fd, (const struct sockaddr *) &addr, sizeof(addr)) == 0) {
+            char req[1024];
+            sprintf(req, "GET /ws HTTP/1.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: CpxD2C5REVLHvsUC9YAoqg==\r\nSec-WebSocket-Version: 13\r\nHost: %s:%d\r\nUser-Agent: Frida/16.1.7\r\n\r\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+            SecureAPI::write(fd, req, SecureAPI::strlen(req));
+
+            char res[1024];
+            if (SecureAPI::read(fd, res, sizeof(res)) > 0) {
+                if (SecureAPI::strstr(res, "tyZql/Y8dNFFyopTrHadWzvbvRs=")) {
+                    LOGI("FridaDetect::detectFridaListener found fingerprint on port %d (WebSocket)", ntohs(addr.sin_port));
+                    SecureAPI::close(fd);
+                    return true;
+                }
+            }
+        }
     }
 
     SecureAPI::close(fd);
