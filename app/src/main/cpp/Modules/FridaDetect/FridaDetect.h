@@ -12,6 +12,8 @@ private:
     bool detectFridaPipe();
     bool detectFridaListener();
 
+    size_t readLine(int fd, char *buf, size_t bufSize);
+
     std::vector<time_t> m_frida_times;
     void (*onFridaDetected)();
 };

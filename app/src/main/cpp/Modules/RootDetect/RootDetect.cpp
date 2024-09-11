@@ -1,34 +1,35 @@
 #include "RootDetect.h"
 #include "SecureAPI.h"
 #include "Log.h"
+#include "obfuscate.h"
 
 #include <fcntl.h>
 #include <dirent.h>
 
 static const char *suBinaries[] = {
-    "/data/local/su",
-    "/data/local/bin/su",
-    "/data/local/xbin/su",
-    "/sbin/su",
-    "/su/bin/su",
-    "/system/bin/su",
-    "/system/bin/.ext/su",
-    "/system/bin/failsafe/su",
-    "/system/sd/xbin/su",
-    "/system/usr/we-need-root/su",
-    "/system/xbin/su",
-    "/cache/su",
-    "/data/su",
-    "/dev/su"
+    AY_OBFUSCATE("/data/local/su"),
+    AY_OBFUSCATE("/data/local/bin/su"),
+    AY_OBFUSCATE("/data/local/xbin/su"),
+    AY_OBFUSCATE("/sbin/su"),
+    AY_OBFUSCATE("/su/bin/su"),
+    AY_OBFUSCATE("/system/bin/su"),
+    AY_OBFUSCATE("/system/bin/.ext/su"),
+    AY_OBFUSCATE("/system/bin/failsafe/su"),
+    AY_OBFUSCATE("/system/sd/xbin/su"),
+    AY_OBFUSCATE("/system/usr/we-need-root/su"),
+    AY_OBFUSCATE("/system/xbin/su"),
+    AY_OBFUSCATE("/cache/su"),
+    AY_OBFUSCATE("/data/su"),
+    AY_OBFUSCATE("/dev/su")
 };
 static const char *magiskMounts[] = {
-    "magisk",
-    "core/mirror",
-    "core/img"
+    AY_OBFUSCATE("magisk"),
+    AY_OBFUSCATE("core/mirror"),
+    AY_OBFUSCATE("core/img")
 };
 
 const char *RootDetect::getName() {
-    return "Root Detection";
+    return AY_OBFUSCATE("Root Detection");
 }
 
 eSeverity RootDetect::getSeverity() {
@@ -43,20 +44,19 @@ bool RootDetect::execute() {
     if (detectMagiskMount()) {
         return true;
     }
-
     return false;
 }
 
 bool RootDetect::detectSuBinaries() {
     for (const char *suBinary : suBinaries) {
         int fd = SecureAPI::openat(AT_FDCWD, suBinary, O_RDONLY, 0);
-        if (fd < 0) {
+        if (fd > 0) {
             LOGI("RootDetect::execute su binary detected: %s", suBinary);
             SecureAPI::close(fd);
             return true;
         }
 
-        if (SecureAPI::access(suBinary, F_OK) != -1 || errno != ENOENT) { // In some case, errno will says access denied when non-root user tries to access it.
+        if (SecureAPI::access(suBinary, F_OK) == 0) {
             LOGI("RootDetect::execute su binary detected: %s", suBinary);
             return true;
         }
@@ -65,7 +65,7 @@ bool RootDetect::detectSuBinaries() {
 }
 
 bool RootDetect::detectMagiskMount() {
-    int fd = SecureAPI::openat(AT_FDCWD, "/proc/self/mounts", O_RDONLY, 0);
+    int fd = SecureAPI::openat(AT_FDCWD, AY_OBFUSCATE("/proc/self/mounts"), O_RDONLY, 0);
     if (fd == -1) {
         return true;
     }
@@ -74,6 +74,7 @@ bool RootDetect::detectMagiskMount() {
     while (SecureAPI::read(fd, buf, sizeof(buf)) > 0) {
         for (const char *magiskMount : magiskMounts) {
             if (strstr(buf, magiskMount)) {
+                LOGI("RootDetect::execute magisk mount detected: %s", magiskMount);
                 SecureAPI::close(fd);
                 return true;
             }

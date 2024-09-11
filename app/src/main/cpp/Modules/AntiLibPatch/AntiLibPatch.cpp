@@ -1,6 +1,7 @@
 #include "AntiLibPatch.h"
 #include "SecureAPI.h"
 #include "Log.h"
+#include "obfuscate.h"
 
 #include <vector>
 #include <map>
@@ -23,6 +24,8 @@
 
 static std::vector<std::string> blacklists {
     // Add your library here incase you don't want a certain library to be detected when it's tampered
+    AY_OBFUSCATE("libclang_rt.ubsan_standalone-aarch64-android.so").operator char *(),
+    AY_OBFUSCATE("libart.so").operator char *()
 };
 
 __attribute__((always_inline)) static inline uint32_t crc32(uint8_t *data, size_t size) {
@@ -49,7 +52,7 @@ AntiLibPatch::AntiLibPatch(void (*callback)(const char *name, const char *sectio
     LOGI("AntiLibPatch::AntiLibPatch");
 
     dl_iterate_phdr([](struct dl_phdr_info *info, size_t size, void *data) -> int {
-        if (!strstr(info->dlpi_name, ".so")) {
+        if (!strstr(info->dlpi_name, AY_OBFUSCATE(".so"))) {
             return 0;
         }
 
@@ -81,7 +84,10 @@ AntiLibPatch::AntiLibPatch(void (*callback)(const char *name, const char *sectio
                     SecureAPI::lseek(fd, shdr.sh_addr, SEEK_SET);
                     SecureAPI::read(fd, tmp, shdr.sh_size);
 
-                    uint32_t checksum = ((std::map<std::string, std::map<std::string, uint32_t>> *) data)->operator[](info->dlpi_name)[name] = crc32((uint8_t *) tmp, shdr.sh_size);
+                    uint32_t checksum = crc32((uint8_t *) tmp, shdr.sh_size);
+                    if (checksum != 0x0) {
+                        (*(std::map<std::string, std::map<std::string, uint32_t>> *) data)[info->dlpi_name][name] = checksum;
+                    }
                     LOGI("AntiLibPatch::AntiLibPatch this->m_checksums[%s][%s]: 0x%08X", info->dlpi_name, name, checksum);
                     delete[] tmp;
                 }
@@ -95,7 +101,7 @@ AntiLibPatch::AntiLibPatch(void (*callback)(const char *name, const char *sectio
 }
 
 const char *AntiLibPatch::getName() {
-    return "Lib. Patch & Hook Detection";
+    return AY_OBFUSCATE("Lib. Patch & Hook Detection");
 }
 
 eSeverity AntiLibPatch::getSeverity() {
@@ -112,7 +118,7 @@ bool AntiLibPatch::execute() {
     }, &infos);
 
     for (auto info : infos) {
-        if (!strstr(info.dlpi_name, ".so") || this->m_checksums.count(info.dlpi_name) == 0 || std::find(blacklists.begin(), blacklists.end(), get_filename(info.dlpi_name)) != blacklists.end()) {
+        if (!strstr(info.dlpi_name, AY_OBFUSCATE(".so")) || this->m_checksums.count(info.dlpi_name) == 0 || std::find(blacklists.begin(), blacklists.end(), get_filename(info.dlpi_name)) != blacklists.end()) {
             continue;
         }
 
@@ -140,13 +146,13 @@ bool AntiLibPatch::execute() {
 
             if (shdr.sh_type == SHT_PROGBITS) {
                 if ((shdr.sh_flags & (SHF_EXECINSTR | SHF_ALLOC)) == (SHF_EXECINSTR | SHF_ALLOC)) {
-                    if (!SecureAPI::strcmp(name, ".plt")) {
+                    if (!SecureAPI::strcmp(name, AY_OBFUSCATE(".plt"))) {
                         continue;
                     }
 
                     uint32_t checksum = crc32((uint8_t *) info.dlpi_addr + shdr.sh_addr, shdr.sh_size);
                     LOGI("AntiLibPatch::execute %s[%s] checksum: 0x%08X -> 0x%08X", info.dlpi_name, name, this->m_checksums[info.dlpi_name][name], checksum);
-                    if (this->m_checksums[info.dlpi_name][name] != checksum) {
+                    if ((checksum != 0x0 && this->m_checksums[info.dlpi_name][name]) && this->m_checksums[info.dlpi_name][name] != checksum) {
                         LOGI("AntiLibPatch::execute %s[%s] checksum mismatch", info.dlpi_name, name);
                         if (this->onLibTampered) {
                             if (this->m_last_checksums.find(info.dlpi_name) == this->m_last_checksums.end() || this->m_last_checksums[info.dlpi_name][name] != checksum) {

@@ -115,7 +115,7 @@ namespace SandHook {
     };
 
     constexpr uint32_t ElfImg::ElfHash(std::string_view name) {
-        uint32_t h = 0, g;
+        uint32_t h = 0, g = 0;
         for (unsigned char p: name) {
             h = (h << 4) + p;
             g = h & 0xf0000000;

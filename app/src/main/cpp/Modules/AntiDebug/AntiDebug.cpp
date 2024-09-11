@@ -1,6 +1,7 @@
 #include "AntiDebug.h"
 #include "SecureAPI.h"
 #include "Log.h"
+#include "obfuscate.h"
 
 #include <fcntl.h>
 #include <dirent.h>
@@ -10,7 +11,7 @@ AntiDebug::AntiDebug(void (*callback)()) : onDebuggerDetected(callback) {
 }
 
 const char *AntiDebug::getName()  {
-    return "Debugger Detection";
+    return AY_OBFUSCATE("Debugger Detection");
 }
 
 eSeverity AntiDebug::getSeverity() {
@@ -31,7 +32,7 @@ bool AntiDebug::execute() {
 
 bool AntiDebug::scanStatus() {
     LOGI("AntiDebug::scanStatus");
-    int fd = SecureAPI::openat(AT_FDCWD, "/proc/self/status", O_RDONLY, 0);
+    int fd = SecureAPI::openat(AT_FDCWD, AY_OBFUSCATE("/proc/self/status"), O_RDONLY, 0);
     if (fd == -1) {
         return true;
     }
@@ -48,7 +49,7 @@ bool AntiDebug::scanStatus() {
 
 bool AntiDebug::scanTaskStatuses() {
     LOGI("AntiDebug::scanTaskStatuses");
-    int fd = SecureAPI::openat(AT_FDCWD, "/proc/self/task", O_RDONLY | O_DIRECTORY, 0);
+    int fd = SecureAPI::openat(AT_FDCWD, AY_OBFUSCATE("/proc/self/task"), O_RDONLY | O_DIRECTORY, 0);
     if (fd == -1) {
         return true;
     }
@@ -62,13 +63,13 @@ bool AntiDebug::scanTaskStatuses() {
             dirp = (struct linux_dirent64 *) (buf + bpos);
             if (dirp->d_type == DT_DIR) {
                 LOGI("AntiDebug::scanTaskStatuses dirp->d_name: %s", dirp->d_name);
-                if (!SecureAPI::strcmp(dirp->d_name, ".") || !SecureAPI::strcmp(dirp->d_name, "..")) {
+                if (!SecureAPI::strcmp(dirp->d_name, AY_OBFUSCATE(".")) || !SecureAPI::strcmp(dirp->d_name, AY_OBFUSCATE(".."))) {
                     bpos += dirp->d_reclen;
                     continue;
                 }
 
                 char statusPath[512];
-                sprintf(statusPath, "/proc/self/task/%s/status", dirp->d_name);
+                sprintf(statusPath, AY_OBFUSCATE("/proc/self/task/%s/status").operator char *(), dirp->d_name);
                 int statusFd = SecureAPI::openat(AT_FDCWD, statusPath, O_RDONLY, 0);
                 LOGI("AntiDebug::scanTaskStatuses statusPath: %s | statusFd: %d", statusPath, statusFd);
                 if (statusFd == -1) {
@@ -95,7 +96,7 @@ bool AntiDebug::scanTaskStatuses() {
 bool AntiDebug::checkTracerPid(int fd) {
     char buf[512];
     while (readLine(fd, buf, sizeof(buf)) > 0) {
-        if (SecureAPI::strncmp(buf, "TracerPid:", 10) == 0) {
+        if (SecureAPI::strncmp(buf, AY_OBFUSCATE("TracerPid:"), 10) == 0) {
             int pid = atoi(buf + 10);
             LOGI("AntiDebug::checkTracerPid(%d) pid: %d", fd, pid);
             if (pid != 0) {

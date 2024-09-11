@@ -1,22 +1,25 @@
 #include "FridaDetect.h"
 #include "SecureAPI.h"
 #include "Log.h"
+#include "obfuscate.h"
 
 #include <fcntl.h>
 #include <dirent.h>
+#include <errno.h>
 
 #include <link.h>
 #include <dlfcn.h>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <poll.h>
 
 FridaDetect::FridaDetect(void (*callback)()) : onFridaDetected(callback) {
 
 }
 
 const char *FridaDetect::getName() {
-    return "Frida Detection";
+    return AY_OBFUSCATE("Frida Detection");
 }
 
 eSeverity FridaDetect::getSeverity() {
@@ -45,7 +48,7 @@ bool FridaDetect::detectFridaAgent() {
     bool result = false;
     dl_iterate_phdr([](struct dl_phdr_info *info, size_t size, void *data) -> int {
         LOGI("FridaDetect::detectFridaAgent info->dlpi_name: %s", info->dlpi_name);
-        if (SecureAPI::strstr(info->dlpi_name, "frida-agent") != nullptr) {
+        if (SecureAPI::strstr(info->dlpi_name, AY_OBFUSCATE("frida-agent")) != nullptr) {
             LOGI("FridaDetect::detectFridaAgent found: %s", info->dlpi_name);
             *(bool *) data = true;
             return 1;
@@ -57,7 +60,7 @@ bool FridaDetect::detectFridaAgent() {
 
 bool FridaDetect::detectFridaPipe() {
     LOGI("FridaDetect::detectFridaPipe");
-    int fd = SecureAPI::openat(AT_FDCWD, "/proc/self/fd", O_RDONLY | O_DIRECTORY, 0);
+    int fd = SecureAPI::openat(AT_FDCWD, AY_OBFUSCATE("/proc/self/fd"), O_RDONLY | O_DIRECTORY, 0);
     if (fd == -1) {
         return true;
     }
@@ -72,13 +75,13 @@ bool FridaDetect::detectFridaPipe() {
             dirp = (struct linux_dirent64 *) (buf + bpos);
             if (dirp->d_type == DT_LNK) {
                 LOGI("FridaDetect::detectFridaPipe dirp->d_name: %s", dirp->d_name);
-                if (!SecureAPI::strcmp(dirp->d_name, ".") || !SecureAPI::strcmp(dirp->d_name, "..")) {
+                if (!SecureAPI::strcmp(dirp->d_name, AY_OBFUSCATE(".")) || !SecureAPI::strcmp(dirp->d_name, AY_OBFUSCATE(".."))) {
                     bpos += dirp->d_reclen;
                     continue;
                 }
 
                 char linkPath[512];
-                sprintf(linkPath, "/proc/self/fd/%s", dirp->d_name);
+                sprintf(linkPath, AY_OBFUSCATE("/proc/self/fd/%s").operator char *(), dirp->d_name);
                 char linkTarget[512];
                 int linkTargetLen = SecureAPI::readlinkat(fd, dirp->d_name, linkTarget, sizeof(linkTarget));
                 if (linkTargetLen == -1) {
@@ -88,7 +91,7 @@ bool FridaDetect::detectFridaPipe() {
                 linkTarget[linkTargetLen] = '\0';
                 LOGI("FridaDetect::detectFridaPipe linkPath: %s | linkTarget: %s", linkPath, linkTarget);
 
-                if (SecureAPI::strstr(linkTarget, "linjector")) {
+                if (SecureAPI::strstr(linkTarget, AY_OBFUSCATE("linjector"))) {
                     LOGI("FridaDetect::detectFridaPipe found: %s", linkTarget);
                     SecureAPI::close(fd);
                     return true;
@@ -105,34 +108,41 @@ bool FridaDetect::detectFridaPipe() {
 
 bool FridaDetect::detectFridaListener() {
     LOGI("FridaDetect::detectFridaListener");
-    int fd = SecureAPI::socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == -1) {
-        LOGI("FridaDetect::detectFridaListener socket failed, errno: %d", errno);
-        return true;
-    }
-
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     for (int i = 1; i < 65535; i++) {
-        addr.sin_port = htons(i);
-        if (SecureAPI::connect(fd, (const struct sockaddr *) &addr, sizeof(addr)) == 0) {
-            char req[1024];
-            sprintf(req, "GET /ws HTTP/1.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: CpxD2C5REVLHvsUC9YAoqg==\r\nSec-WebSocket-Version: 13\r\nHost: %s:%d\r\nUser-Agent: Frida/16.1.7\r\n\r\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-            SecureAPI::write(fd, req, SecureAPI::strlen(req));
+        if (i == 39963) { // YouTube port (WTF???)
+            continue;
+        }
 
-            char res[1024];
-            if (SecureAPI::read(fd, res, sizeof(res)) > 0) {
-                if (SecureAPI::strstr(res, "tyZql/Y8dNFFyopTrHadWzvbvRs=")) {
-                    LOGI("FridaDetect::detectFridaListener found fingerprint on port %d (WebSocket)", ntohs(addr.sin_port));
-                    SecureAPI::close(fd);
-                    return true;
-                }
+        int fd = SecureAPI::socket(AF_INET, SOCK_STREAM, 0);
+        if (fd == -1) {
+            LOGI("FridaDetect::detectFridaListener socket failed, errno: %d", errno);
+            return true;
+        }
+
+        addr.sin_port = htons(i);
+        int result = SecureAPI::connect(fd, (const struct sockaddr *) &addr, sizeof(addr));
+        if (result == -1 && errno != EINPROGRESS) {
+            continue;
+        }
+
+        char req[1024];
+        sprintf(req, AY_OBFUSCATE("GET /ws HTTP/1.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: CpxD2C5REVLHvsUC9YAoqg==\r\nSec-WebSocket-Version: 13\r\nHost: %s:%d\r\nUser-Agent: Frida/16.1.7\r\n\r\n").operator char *(), inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+        SecureAPI::write(fd, req, SecureAPI::strlen(req));
+
+        char res[1024];
+        if (SecureAPI::read(fd, res, sizeof(res)) > 0) {
+            if (SecureAPI::strstr(res, AY_OBFUSCATE("tyZql/Y8dNFFyopTrHadWzvbvRs="))) {
+                LOGI("FridaDetect::detectFridaListener found fingerprint on port %d (WebSocket)", ntohs(addr.sin_port));
+                SecureAPI::close(fd);
+                return true;
             }
         }
-    }
 
-    SecureAPI::close(fd);
+        SecureAPI::close(fd);
+    }
     return false;
 }

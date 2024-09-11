@@ -1,18 +1,57 @@
 #include "AntiDump.h"
 #include "SecureAPI.h"
 #include "Log.h"
+#include "obfuscate.h"
 
 #include <sys/inotify.h>
 #include <sys/select.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <errno.h>
 
 AntiDump::AntiDump(void (*callback)()) : onDumpDetected(callback) {
+    this->m_fd = SecureAPI::inotify_init1(0);
+    if (this->m_fd == -1) {
+        LOGI("AntiDump::execute inotify_init1 failed");
+        if (errno == EMFILE || errno == ENFILE) {
+            LOGI("AntiDump::execute inotify_init1 probably failed because of max_user_watches being tampered.");
+        }
+        return;
+    }
 
+    this->m_wd[this->m_count++] = SecureAPI::inotify_add_watch(this->m_fd, AY_OBFUSCATE("/proc/self/maps"), IN_ACCESS | IN_OPEN);
+    this->m_wd[this->m_count++] = SecureAPI::inotify_add_watch(this->m_fd, AY_OBFUSCATE("/proc/self/mem"), IN_ACCESS | IN_OPEN);
+    this->m_wd[this->m_count++] = SecureAPI::inotify_add_watch(this->m_fd, AY_OBFUSCATE("/proc/self/pagemap"), IN_ACCESS | IN_OPEN);
+
+    struct linux_dirent64 *dirp;
+    char buf[512];
+    int nread;
+
+    int task = SecureAPI::openat(AT_FDCWD, AY_OBFUSCATE("/proc/self/task"), O_RDONLY | O_DIRECTORY, 0);
+    while ((nread = SecureAPI::getdents64(task, (struct linux_dirent64 *) buf, sizeof(buf))) > 0) {
+        for (int bpos = 0; bpos < nread;) {
+            dirp = (struct linux_dirent64 *) (buf + bpos);
+            if (!SecureAPI::strcmp(dirp->d_name, AY_OBFUSCATE(".")) ||
+                !SecureAPI::strcmp(dirp->d_name, AY_OBFUSCATE(".."))) {
+                bpos += dirp->d_reclen;
+                continue;
+            }
+            if (dirp->d_type == DT_DIR) {
+                char memPath[512], pagemapPath[512];
+                sprintf(memPath, AY_OBFUSCATE("/proc/self/task/%s/mem").operator char *(), dirp->d_name);
+                sprintf(pagemapPath, AY_OBFUSCATE("/proc/self/task/%s/pagemap").operator char *(), dirp->d_name);
+
+                this->m_wd[this->m_count++] = SecureAPI::inotify_add_watch(this->m_fd, memPath, IN_ACCESS | IN_OPEN);
+                this->m_wd[this->m_count++] = SecureAPI::inotify_add_watch(this->m_fd, pagemapPath, IN_ACCESS | IN_OPEN);
+            }
+            bpos += dirp->d_reclen;
+        }
+    }
+    SecureAPI::close(task);
 }
 
 const char *AntiDump::getName() {
-    return "Memory Dump Detection";
+    return AY_OBFUSCATE("Memory Dump Detection");
 }
 
 eSeverity AntiDump::getSeverity() {
@@ -20,48 +59,12 @@ eSeverity AntiDump::getSeverity() {
 }
 
 bool AntiDump::execute() {
-    int fd = SecureAPI::inotify_init1(0);
-    if (fd < 0) {
-        LOGI("AntiDump::execute inotify_init1 failed");
-        if (errno == EMFILE || errno == ENFILE) {
-            LOGI("AntiDump::execute inotify_init1 probably failed because of max_user_watches being tampered.");
-        }
-        return true;
+    if (this->m_fd == -1) {
+        return false;
     }
 
-    int n = 0;
-    int wd[100];
-
-    wd[n++] = SecureAPI::inotify_add_watch(fd, "/proc/self/maps", IN_ACCESS | IN_OPEN);
-    wd[n++] = SecureAPI::inotify_add_watch(fd, "/proc/self/mem", IN_ACCESS | IN_OPEN);
-    wd[n++] = SecureAPI::inotify_add_watch(fd, "/proc/self/pagemap", IN_ACCESS | IN_OPEN);
-
-    struct linux_dirent64 *dirp;
-    char buf[512];
-    int nread;
-
-    int task = SecureAPI::openat(AT_FDCWD, "/proc/self/task", O_RDONLY | O_DIRECTORY, 0);
-    while ((nread = SecureAPI::getdents64(task, (struct linux_dirent64 *) buf, sizeof(buf))) > 0) {
-        for (int bpos = 0; bpos < nread;) {
-            dirp = (struct linux_dirent64 *) (buf + bpos);
-            if (!SecureAPI::strcmp(dirp->d_name, ".") || !SecureAPI::strcmp(dirp->d_name, "..") ) {
-                bpos += dirp->d_reclen;
-                continue;
-            }
-            if (dirp->d_type == DT_DIR) {
-                char memPath[512], pagemapPath[512];
-                sprintf(memPath, "/proc/self/task/%s/mem", dirp->d_name);
-                sprintf(pagemapPath, "/proc/self/task/%s/pagemap", dirp->d_name);
-
-                wd[n++] = SecureAPI::inotify_add_watch(fd, memPath, IN_ACCESS | IN_OPEN);
-                wd[n++] = SecureAPI::inotify_add_watch(fd, pagemapPath, IN_ACCESS | IN_OPEN);
-            }
-            bpos += dirp->d_reclen;
-        }
-    }
-    SecureAPI::close(task);
-
-    int len = (int) SecureAPI::read(fd, buf, sizeof(buf));
+    char buf[4096];
+    int len = (int) SecureAPI::read(this->m_fd, buf, sizeof(buf));
     if (len > 0) {
         LOGI("AntiDump::execute len: %d", len);
         struct inotify_event *event;
@@ -69,7 +72,7 @@ bool AntiDump::execute() {
             event = (struct inotify_event *) ptr;
             if (event->mask & IN_ACCESS || event->mask & IN_OPEN) {
                 LOGI("AntiDump::execute event->mask: %d", event->mask);
-                SecureAPI::close(fd);
+                SecureAPI::close(this->m_fd);
 
                 if (this->onDumpDetected) {
                     time_t now = time(0);
@@ -82,13 +85,5 @@ bool AntiDump::execute() {
             }
         }
     }
-
-    for (int i = 0; i < n; i++) {
-        if (wd[i]) {
-            SecureAPI::inotify_rm_watch(fd, wd[i]);
-        }
-    }
-
-    SecureAPI::close(fd);
     return false;
 }

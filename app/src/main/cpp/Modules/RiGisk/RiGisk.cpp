@@ -1,6 +1,7 @@
 #include "RiGisk.h"
 #include "SecureAPI.h"
 #include "Log.h"
+#include "obfuscate.h"
 
 #include "ElfImg.h"
 
@@ -45,7 +46,7 @@ template<typename T> inline T *getStaticPointer(const SandHook::ElfImg &linker, 
 }
 
 const char *RiGisk::getName() {
-    return "Riru & Zygisk Detection";
+    return AY_OBFUSCATE("Riru & Zygisk Detection");
 }
 
 eSeverity RiGisk::getSeverity() {
@@ -55,17 +56,17 @@ eSeverity RiGisk::getSeverity() {
 bool RiGisk::execute() {
     LOGI("RiGisk::execute");
 
-    SandHook::ElfImg linker("/linker");
-    solist = getStaticPointer<soinfo>(linker, "__dl__ZL6solist");
-    somain = getStaticPointer<soinfo>(linker, "__dl__ZL6somain");
-    preloads = reinterpret_cast<std::vector<soinfo *> *>(linker.getSymbAddress("__dl__ZL13g_ld_preloads"));
+    SandHook::ElfImg linker(AY_OBFUSCATE("/linker").operator char *());
+    solist = getStaticPointer<soinfo>(linker, AY_OBFUSCATE("__dl__ZL6solist").operator char *());
+    somain = getStaticPointer<soinfo>(linker, AY_OBFUSCATE("__dl__ZL6somain").operator char *());
+    preloads = reinterpret_cast<std::vector<soinfo *> *>(linker.getSymbAddress(AY_OBFUSCATE("__dl__ZL13g_ld_preloads").operator char *()));
     LOGI("RiGisk::execute solist: %p, somain: %p, preloads: %p", solist, somain, preloads);
 
-    soinfo::get_realpath_sym = reinterpret_cast<decltype(soinfo::get_realpath_sym)>(linker.getSymbAddress("__dl__ZNK6soinfo12get_realpathEv"));
-    soinfo::get_soname_sym = reinterpret_cast<decltype(soinfo::get_soname_sym)>(linker.getSymbAddress("__dl__ZNK6soinfo10get_sonameEv"));
+    soinfo::get_realpath_sym = reinterpret_cast<decltype(soinfo::get_realpath_sym)>(linker.getSymbAddress(AY_OBFUSCATE("__dl__ZNK6soinfo12get_realpathEv").operator char *()));
+    soinfo::get_soname_sym = reinterpret_cast<decltype(soinfo::get_soname_sym)>(linker.getSymbAddress(AY_OBFUSCATE("__dl__ZNK6soinfo10get_sonameEv").operator char *()));
     LOGI("RiGisk::execute get_realpath_sym: %p, get_soname_sym: %p", soinfo::get_realpath_sym, soinfo::get_soname_sym);
 
-    auto vsdo = getStaticPointer<soinfo>(linker, "__dl__ZL4vdso");
+    auto vsdo = getStaticPointer<soinfo>(linker, AY_OBFUSCATE("__dl__ZL4vdso").operator char *());
     LOGI("RiGisk::execute vsdo: %p", vsdo);
     for (size_t i = 0; i < 1024 / sizeof(void *); i++) {
         auto *possible_next = *(void **) ((uintptr_t) solist + i * sizeof(void *));
@@ -80,10 +81,10 @@ bool RiGisk::execute() {
         for (auto *iter = somain; iter; iter = iter->next()) {
             LOGI("RiGisk::execute somain so: %p, realpath: %s, soname: %s", iter, iter->get_realpath(), iter->get_soname());
             if (iter->get_realpath() && iter->get_soname()) {
-                if (SecureAPI::strstr(iter->get_realpath(), "riru")) {
+                if (SecureAPI::strstr(iter->get_realpath(), AY_OBFUSCATE("riru"))) {
                     LOGI("RiGisk::execute riru detected");
                     return true;
-                } else if (SecureAPI::strstr(iter->get_soname(), "riru")) {
+                } else if (SecureAPI::strstr(iter->get_soname(), AY_OBFUSCATE("riru"))) {
                     LOGI("RiGisk::execute riru detected");
                     return true;
                 }
@@ -95,10 +96,10 @@ bool RiGisk::execute() {
         for (auto *iter = solist; iter; iter = iter->next()) {
             LOGI("RiGisk::execute solist so: %p, realpath: %s, soname: %s", iter, iter->get_realpath(), iter->get_soname());
             if (iter->get_realpath() && iter->get_soname()) {
-                if (SecureAPI::strstr(iter->get_realpath(), "riru")) {
+                if (SecureAPI::strstr(iter->get_realpath(), AY_OBFUSCATE("riru"))) {
                     LOGI("RiGisk::execute riru detected");
                     return true;
-                } else if (SecureAPI::strstr(iter->get_soname(), "riru")) {
+                } else if (SecureAPI::strstr(iter->get_soname(), AY_OBFUSCATE("riru"))) {
                     LOGI("RiGisk::execute riru detected");
                     return true;
                 }
@@ -110,10 +111,10 @@ bool RiGisk::execute() {
         for (auto so: *preloads) {
             LOGI("RiGisk::execute preloads so: %p, realpath: %s, soname: %s", so, so->get_realpath(), so->get_soname());
             if (so->get_realpath() && so->get_soname()) {
-                if (SecureAPI::strstr(so->get_realpath(), "zygisk")) {
+                if (SecureAPI::strstr(so->get_realpath(), AY_OBFUSCATE("zygisk"))) {
                     LOGI("RiGisk::execute zygisk detected");
                     return true;
-                } else if (SecureAPI::strstr(so->get_soname(), "zygisk")) {
+                } else if (SecureAPI::strstr(so->get_soname(), AY_OBFUSCATE("zygisk"))) {
                     LOGI("RiGisk::execute zygisk detected");
                     return true;
                 }
